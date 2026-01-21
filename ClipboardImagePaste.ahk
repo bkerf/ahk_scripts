@@ -7,8 +7,13 @@
 
 ; 截图保存目录
 global ScreenshotDir := A_Temp "\Screenshots"
+global MaxScreenshots := 50  ; 最多保存截图数量
+
 if !DirExist(ScreenshotDir)
     DirCreate(ScreenshotDir)
+
+; 启动时清理旧截图
+CleanupOldScreenshots()
 
 ; 使用 $前缀 防止热键自触发
 $^v:: {
@@ -58,6 +63,43 @@ SetClipboardToFile(filepath) {
     psCommand := 'Add-Type -AssemblyName System.Windows.Forms; $fc = New-Object System.Collections.Specialized.StringCollection; $fc.Add(\"' filepath '\"); [System.Windows.Forms.Clipboard]::SetFileDropList($fc)'
 
     RunWait('powershell -NoProfile -Command "' psCommand '"',, "Hide")
+}
+
+CleanupOldScreenshots() {
+    ; 获取所有截图文件，按修改时间排序
+    files := []
+    loop files ScreenshotDir "\screenshot_*.png" {
+        files.Push({path: A_LoopFileFullPath, time: A_LoopFileTimeModified})
+    }
+
+    ; 如果超过限制，删除最旧的文件
+    if files.Length > MaxScreenshots {
+        ; 按时间排序（旧的在前）
+        files := SortByTime(files)
+
+        ; 删除多余的旧文件
+        deleteCount := files.Length - MaxScreenshots
+        loop deleteCount {
+            try FileDelete(files[A_Index].path)
+        }
+    }
+}
+
+SortByTime(arr) {
+    ; 简单冒泡排序，按时间升序
+    n := arr.Length
+    loop n - 1 {
+        i := A_Index
+        loop n - i {
+            j := A_Index
+            if arr[j].time > arr[j + 1].time {
+                temp := arr[j]
+                arr[j] := arr[j + 1]
+                arr[j + 1] := temp
+            }
+        }
+    }
+    return arr
 }
 
 ; 托盘菜单
