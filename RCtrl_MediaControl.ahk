@@ -1,11 +1,11 @@
 ; ============================================================
 ; RCtrl_MediaControl.ahk
 ; ============================================================
-; 功能：右 Ctrl 键增强，实现"按住暂停、释放恢复"的媒体控制
+; 功能：右 Ctrl 键增强，实现"按住暂停+切换焦点、释放恢复"的控制
 ;
 ; 使用场景：
-;   - 听音乐/播客时，有人叫你，按住右Ctrl暂停
-;   - 回应完毕，松开右Ctrl自动恢复播放
+;   - 听音乐时，按住右Ctrl暂停并切换到PowerShell窗口
+;   - 松开右Ctrl恢复播放并回到之前的窗口
 ;   - 右Ctrl原有功能（如Ctrl+C复制）不受影响
 ;
 ; 智能检测：
@@ -18,8 +18,8 @@
 ;   - check_media.py 用于检测媒体播放状态
 ;
 ; 快捷键：
-;   - 按住右Ctrl：暂停当前播放的媒体
-;   - 释放右Ctrl：恢复播放（仅当之前是本脚本暂停的）
+;   - 按住右Ctrl：暂停媒体 + 切换焦点到PowerShell
+;   - 释放右Ctrl：恢复播放 + 恢复之前的窗口焦点
 ;
 ; ============================================================
 
@@ -91,6 +91,13 @@ IsMediaPlaying() {
     ; 保持右Ctrl原有功能
     Send "{RCtrl Down}"
 
+    ; 【第一时间】保存当前窗口并切换焦点到 PowerShell
+    prevWindow := WinExist("A")
+    if WinExist("ahk_exe pwsh.exe")
+        WinActivate("ahk_exe pwsh.exe")
+    else if WinExist("ahk_exe powershell.exe")
+        WinActivate("ahk_exe powershell.exe")
+
     ; 检测媒体状态，只有正在播放时才暂停
     if IsMediaPlaying() {
         Send "{Media_Play_Pause}"
@@ -110,4 +117,8 @@ IsMediaPlaying() {
 
     ; 释放右Ctrl
     Send "{RCtrl Up}"
+
+    ; 延迟3秒后恢复之前的窗口焦点
+    Sleep 3000
+    try WinActivate("ahk_id " . prevWindow)
 }
