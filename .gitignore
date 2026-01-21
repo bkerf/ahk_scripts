@@ -1,0 +1,41 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.pyo
+.Python
+*.egg-info/
+dist/
+build/
+.eggs/
+*.egg
+.venv/
+venv/
+env/
+
+# Windows
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+$RECYCLE.BIN/
+*.lnk
+
+# Temp files
+*.tmp
+*.temp
+*.log
+*.bak
+~$*
+
+# IDE
+.vscode/
+.idea/
+*.sublime-*
+
+# Screenshots (generated)
+Screenshots/
+
+# Environment variables (contains API keys)
+.env
+.env.local
+*.env
