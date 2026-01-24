@@ -1,124 +1,184 @@
 ; ============================================================
 ; RCtrl_MediaControl.ahk
 ; ============================================================
-; 功能：右 Ctrl 键增强，实现"按住暂停+切换焦点、释放恢复"的控制
+; Description: Right Ctrl key enhancement - hold to pause media and switch focus to PowerShell, release to restore
 ;
-; 使用场景：
-;   - 听音乐时，按住右Ctrl暂停并切换到PowerShell窗口
-;   - 松开右Ctrl恢复播放并回到之前的窗口
-;   - 右Ctrl原有功能（如Ctrl+C复制）不受影响
+; Usage:
+;   - Hold right Ctrl: pause media and switch focus to PowerShell window
+;   - Release right Ctrl: resume media and return to previous window
+;   - Original right Ctrl functions (e.g., Ctrl+C) are preserved
 ;
-; 智能检测：
-;   - 只有媒体正在播放时才会暂停
-;   - 如果媒体本身没有播放，按右Ctrl不会触发播放
-;   - 避免误操作导致意外播放
+; Smart Detection:
+;   - Only pauses when media is actively playing
+;   - Won't accidentally start playback if media is stopped
+;   - Prevents unintended playback triggering
 ;
-; 依赖：
-;   - Python + winsdk 库 (pip install winsdk)
-;   - check_media.py 用于检测媒体播放状态
+; Dependencies:
+;   - Python + winsdk library (pip install winsdk)
+;   - check_media.py for detecting media playback status
 ;
-; 快捷键：
-;   - 按住右Ctrl：暂停媒体 + 切换焦点到PowerShell
-;   - 释放右Ctrl：恢复播放 + 恢复之前的窗口焦点
+; Key Features:
+;   - Hold right Ctrl: pause media + switch focus to PowerShell
+;   - Release right Ctrl: resume media + restore previous window focus
 ;
 ; ============================================================
 
 #Requires AutoHotkey v2.0
 #SingleInstance Force
 
-; 状态标记：记录媒体是否由本脚本暂停
-; 用于判断释放时是否需要恢复播放
-global pausedByScript := false
+; ===== Logging Configuration =====
+global logFile := A_ScriptDir "\RCtrl_debug.log"
 
-; ===== 托盘菜单配置 =====
-A_TrayMenu.Delete()
-A_TrayMenu.Add("RCtrl 媒体控制", (*) => "")
-A_TrayMenu.Disable("RCtrl 媒体控制")
-A_TrayMenu.Add()
-A_TrayMenu.Add("暂停脚本", TrayPauseScript)      ; 临时禁用热键
-A_TrayMenu.Add("移除开机启动", TrayRemoveAutoStart)
-A_TrayMenu.Add()
-A_TrayMenu.Add("退出", (*) => ExitApp())
-
-; 暂停/恢复脚本功能
-TrayPauseScript(*) {
-    Suspend(-1)  ; 切换暂停状态
-    if A_IsSuspended
-        A_TrayMenu.Check("暂停脚本")
-    else
-        A_TrayMenu.Uncheck("暂停脚本")
+; Write log entry with timestamp
+Log(msg) {
+    timestamp := FormatTime(, "yyyy-MM-dd HH:mm:ss")
+    text := timestamp . " | " . msg . "`n"
+    FileAppend(text, logFile)
 }
 
-; 从开机启动中移除
+; Clear old log file
+if FileExist(logFile)
+    FileDelete(logFile)
+Log("=== Script Started ===")
+
+; State flag: tracks whether media was paused by this script
+; Used to determine whether to resume playback on release
+global pausedByScript := false
+
+; ===== Tray Menu Configuration =====
+A_TrayMenu.Delete()
+A_TrayMenu.Add("RCtrl Media Control", (*) => "")
+A_TrayMenu.Disable("RCtrl Media Control")
+A_TrayMenu.Add()
+A_TrayMenu.Add("Pause Script", TrayPauseScript)      ; Temporarily disable hotkeys
+A_TrayMenu.Add("Remove from Startup", TrayRemoveAutoStart)
+A_TrayMenu.Add()
+A_TrayMenu.Add("Exit", (*) => ExitApp())
+
+; Pause/Resume script functionality
+TrayPauseScript(*) {
+    Suspend(-1)  ; Toggle suspend state
+    if A_IsSuspended
+        A_TrayMenu.Check("Pause Script")
+    else
+        A_TrayMenu.Uncheck("Pause Script")
+}
+
+; Remove from startup
 TrayRemoveAutoStart(*) {
     shortcutPath := A_Startup "\RCtrl_MediaControl.lnk"
     if FileExist(shortcutPath) {
         FileDelete(shortcutPath)
-        MsgBox("已从开机启动移除", "RCtrl MediaControl", "Iconi T2")
+        MsgBox("Removed from startup", "RCtrl MediaControl", "Iconi T2")
     }
 }
 
-; 启动提示
-TrayTip("RCtrl 媒体控制", "已启动，按住右Ctrl暂停，松开恢复", 1)
+; Startup notification
+TrayTip("RCtrl Media Control", "Started - Hold right Ctrl to pause, release to resume", 1)
 
-; ===== 自启动设置 =====
-; 首次运行时自动创建开机启动快捷方式
+; ===== Auto-Startup Configuration =====
+; Automatically create startup shortcut on first run
 shortcutPath := A_Startup "\RCtrl_MediaControl.lnk"
 if !FileExist(shortcutPath) {
     try FileCreateShortcut(A_ScriptFullPath, shortcutPath, A_ScriptDir)
 }
 
-; ===== 媒体状态检测 =====
-; 调用 Python 脚本检测当前是否有媒体正在播放
-; 返回值：true=正在播放，false=未播放或检测失败
+; ===== Media Status Detection =====
+; Call Python script to detect if media is currently playing
+; Returns: true if playing, false if not playing or detection failed
 IsMediaPlaying() {
     pyFile := A_ScriptDir "\check_media.py"
     if !FileExist(pyFile)
         return false
 
-    ; pythonw 静默运行，通过退出码判断状态
-    ; 退出码 0 = 正在播放
-    ; 退出码 1 = 未播放
+    ; Run pythonw silently, check status via exit code
+    ; Exit code 0 = playing
+    ; Exit code 1 = not playing
     exitCode := RunWait("pythonw `"" . pyFile . "`"",, "Hide")
     return exitCode = 0
 }
 
-; ===== 主热键逻辑 =====
-; * 前缀：允许与其他修饰键组合（如 Ctrl+Shift+RCtrl）
+; ===== Main Hotkey Logic =====
+; * prefix: allows combination with other modifiers (e.g., Ctrl+Shift+RCtrl)
 *RCtrl:: {
     global pausedByScript
 
-    ; 保持右Ctrl原有功能
+    Log("--- RCtrl Pressed ---")
+
+    ; Preserve right Ctrl original function
     Send "{RCtrl Down}"
 
-    ; 【第一时间】保存当前窗口并切换焦点到 PowerShell
+    ; [Immediately] Save current window and switch focus to PowerShell
     prevWindow := WinExist("A")
-    if WinExist("ahk_exe pwsh.exe")
-        WinActivate("ahk_exe pwsh.exe")
-    else if WinExist("ahk_exe powershell.exe")
-        WinActivate("ahk_exe powershell.exe")
+    Log("Current window handle: " . prevWindow)
 
-    ; 检测媒体状态，只有正在播放时才暂停
-    if IsMediaPlaying() {
-        Send "{Media_Play_Pause}"
-        pausedByScript := true   ; 标记为本脚本暂停
+    if WinExist("ahk_exe pwsh.exe") {
+        WinActivate("ahk_exe pwsh.exe")
+        Log("Switched to PowerShell 7")
+    } else if WinExist("ahk_exe powershell.exe") {
+        WinActivate("ahk_exe powershell.exe")
+        Log("Switched to Windows PowerShell")
     } else {
-        pausedByScript := false  ; 媒体未播放，不做任何操作
+        Log("PowerShell window not found")
     }
 
-    ; 阻塞等待按键释放
-    KeyWait "RCtrl"
+    ; Detect media status, only pause if actively playing
+    if IsMediaPlaying() {
+        Send "{Media_Play_Pause}"
+        pausedByScript := true   ; Mark as paused by this script
+        Log("Media paused")
+    } else {
+        pausedByScript := false  ; Media not playing, do nothing
+        Log("Media not playing, skip pause")
+    }
 
-    ; 释放时，只有本脚本暂停的才恢复播放
+    ; Block wait for key release
+    KeyWait "RCtrl"
+    Log("--- RCtrl Released ---")
+
+    ; On release, only resume if paused by this script
     if pausedByScript {
         Send "{Media_Play_Pause}"
         pausedByScript := false
+        Log("Media resumed")
     }
 
-    ; 释放右Ctrl
+    ; Release right Ctrl
     Send "{RCtrl Up}"
 
-    ; 延迟3秒后恢复之前的窗口焦点
-    Sleep 3000
+    ; Get PowerShell window handle for focus detection
+    pwshWindow := WinExist("A")
+
+    ; Wait 4 seconds, check if focus remains on PowerShell
+    startTime := A_TickCount
+    Log("Starting 4s wait, PowerShell handle=" . pwshWindow)
+
+    loopCount := 0
+    Loop {
+        loopCount++
+        Sleep 50
+        ; Check if focus left PowerShell (user clicked other window)
+        if (WinExist("A") != pwshWindow) {
+            Log("Focus left PowerShell! Current window=" . WinExist("A"))
+            break
+        }
+        ; After 4s with focus on PowerShell, send Enter then switch back
+        if (A_TickCount - startTime >= 4000) {
+            Log("4s timeout, sending Enter to PowerShell")
+            ; Activate window then send
+            WinActivate("ahk_id " . pwshWindow)
+            WinWaitActive("ahk_id " . pwshWindow, "", 0.5)
+            SendInput "{Enter}"
+            break
+        }
+        ; Log status every second
+        if (Mod(loopCount, 20) = 0) {
+            Log("Waiting... elapsed=" . ((A_TickCount - startTime) / 1000) . "s")
+        }
+    }
+
+    Log("Preparing to switch back to original window, handle: " . prevWindow)
+    ; Restore previous window focus
     try WinActivate("ahk_id " . prevWindow)
+    Log("--- Hotkey handling complete ---")
 }
