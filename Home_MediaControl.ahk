@@ -1,12 +1,12 @@
 ; ============================================================
-; RCtrl_MediaControl.ahk
+; Home_MediaControl.ahk
 ; ============================================================
-; Description: Right Ctrl key enhancement - hold to pause media and switch focus to PowerShell, release to restore
+; Description: Home key enhancement - hold to pause media and switch focus to PowerShell, release to restore
 ;
 ; Usage:
-;   - Hold right Ctrl: pause media and switch focus to PowerShell window
-;   - Release right Ctrl: resume media and return to previous window
-;   - Original right Ctrl functions (e.g., Ctrl+C) are preserved
+;   - Hold Home: pause media and switch focus to PowerShell window
+;   - Release Home: resume media and return to previous window
+;   - Original Home functions are preserved
 ;
 ; Smart Detection:
 ;   - Only pauses when media is actively playing
@@ -18,8 +18,8 @@
 ;   - check_media.py for detecting media playback status
 ;
 ; Key Features:
-;   - Hold right Ctrl: pause media + switch focus to PowerShell
-;   - Release right Ctrl: resume media + restore previous window focus
+;   - Hold Home: pause media + switch focus to PowerShell
+;   - Release Home: resume media + restore previous window focus
 ;
 ; ============================================================
 
@@ -27,7 +27,7 @@
 #SingleInstance Force
 
 ; ===== Logging Configuration =====
-global logFile := A_ScriptDir "\RCtrl_debug.log"
+global logFile := A_ScriptDir "\Home_debug.log"
 
 ; Write log entry with timestamp
 Log(msg) {
@@ -47,8 +47,8 @@ global pausedByScript := false
 
 ; ===== Tray Menu Configuration =====
 A_TrayMenu.Delete()
-A_TrayMenu.Add("RCtrl Media Control", (*) => "")
-A_TrayMenu.Disable("RCtrl Media Control")
+A_TrayMenu.Add("Home Media Control", (*) => "")
+A_TrayMenu.Disable("Home Media Control")
 A_TrayMenu.Add()
 A_TrayMenu.Add("Pause Script", TrayPauseScript)      ; Temporarily disable hotkeys
 A_TrayMenu.Add("Remove from Startup", TrayRemoveAutoStart)
@@ -66,19 +66,19 @@ TrayPauseScript(*) {
 
 ; Remove from startup
 TrayRemoveAutoStart(*) {
-    shortcutPath := A_Startup "\RCtrl_MediaControl.lnk"
+    shortcutPath := A_Startup "\Home_MediaControl.lnk"
     if FileExist(shortcutPath) {
         FileDelete(shortcutPath)
-        MsgBox("Removed from startup", "RCtrl MediaControl", "Iconi T2")
+        MsgBox("Removed from startup", "Home MediaControl", "Iconi T2")
     }
 }
 
 ; Startup notification
-TrayTip("RCtrl Media Control", "Started - Hold right Ctrl to pause, release to resume", 1)
+TrayTip("Home Media Control", "Started - Hold Home to pause, release to resume", 1)
 
 ; ===== Auto-Startup Configuration =====
 ; Automatically create startup shortcut on first run
-shortcutPath := A_Startup "\RCtrl_MediaControl.lnk"
+shortcutPath := A_Startup "\Home_MediaControl.lnk"
 if !FileExist(shortcutPath) {
     try FileCreateShortcut(A_ScriptFullPath, shortcutPath, A_ScriptDir)
 }
@@ -99,14 +99,14 @@ IsMediaPlaying() {
 }
 
 ; ===== Main Hotkey Logic =====
-; * prefix: allows combination with other modifiers (e.g., Ctrl+Shift+RCtrl)
-*RCtrl:: {
+; * prefix: allows combination with other modifiers (e.g., Ctrl+Shift+Home)
+*Home:: {
     global pausedByScript
 
-    Log("--- RCtrl Pressed ---")
+    Log("--- Home Pressed ---")
 
-    ; Preserve right Ctrl original function
-    Send "{RCtrl Down}"
+    ; Preserve Home original function
+    Send "{Home Down}"
 
     ; [Immediately] Save current window and switch focus to PowerShell
     prevWindow := WinExist("A")
@@ -133,8 +133,8 @@ IsMediaPlaying() {
     }
 
     ; Block wait for key release
-    KeyWait "RCtrl"
-    Log("--- RCtrl Released ---")
+    KeyWait "Home"
+    Log("--- Home Released ---")
 
     ; On release, only resume if paused by this script
     if pausedByScript {
@@ -143,8 +143,8 @@ IsMediaPlaying() {
         Log("Media resumed")
     }
 
-    ; Release right Ctrl
-    Send "{RCtrl Up}"
+    ; Release Home
+    Send "{Home Up}"
 
     ; Get PowerShell window handle for focus detection
     pwshWindow := WinExist("A")

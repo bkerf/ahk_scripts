@@ -7,7 +7,7 @@ Windows 自动化脚本集合，基于 AutoHotkey v2。
 | 脚本 | 功能 | 快捷键 |
 |------|------|--------|
 | `ClipboardImagePaste.ahk` | 剪贴板图片自动转文件 | `Ctrl+V` |
-| `RCtrl_MediaControl.ahk` | 右Ctrl控制媒体播放 | 按住/释放右Ctrl |
+| `Home_MediaControl.ahk` | Home键控制媒体播放 | 按住/释放Home |
 | `translator.ahk` | DeepL 翻译工具 | `Ctrl+Shift+T` 等 |
 
 ## 功能详情
@@ -19,12 +19,12 @@ Windows 自动化脚本集合，基于 AutoHotkey v2。
 - `Ctrl+V` - 自动检测剪贴板图片并转换
 - `Shift+Enter` - 终端换行（用于 Claude Code）
 
-### RCtrl_MediaControl
+### Home_MediaControl
 
-右 Ctrl 键增强，按住暂停媒体播放，释放恢复播放，同时保留 Ctrl 原有功能。
+Home 键增强，按住暂停媒体播放，释放恢复播放，同时保留 Home 原有功能。
 
-- 按住右 Ctrl → 暂停播放
-- 释放右 Ctrl → 恢复播放
+- 按住 Home → 暂停播放
+- 释放 Home → 恢复播放
 
 ### translator
 

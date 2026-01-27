@@ -11,7 +11,7 @@ scriptDir := A_ScriptDir
 ; 要启动的脚本列表
 scripts := [
     "ClipboardImagePaste.ahk",
-    "RCtrl_MediaControl.ahk",
+    "Home_MediaControl.ahk",
     "translator.ahk"
 ]
 
