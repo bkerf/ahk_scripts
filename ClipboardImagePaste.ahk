@@ -17,15 +17,23 @@ CleanupOldScreenshots()
 
 ; 使用 $前缀 防止热键自触发
 $^v:: {
-    ; 检查剪贴板是否有图片（且不是文件）
+    ; ClipboardMonitor.ps1 后台已自动将截图转为文件引用
+    ; 这里只处理 PS1 未来得及转换的情况（极少发生）
     if ClipboardHasImage() && !ClipboardHasFiles() {
-        ; 保存图片到文件
-        filepath := SaveClipboardImage()
-        if filepath {
-            ; 将文件路径设置为剪贴板（作为文件引用）
-            SetClipboardToFile(filepath)
-            ; 短暂等待剪贴板更新
-            Sleep(50)
+        ; 等待 PS1 后台完成转换（最多等 1.5 秒）
+        waited := 0
+        while (ClipboardHasImage() && !ClipboardHasFiles() && waited < 1500) {
+            Sleep(200)
+            waited += 200
+        }
+
+        ; 如果等待后仍是图片（PS1 未运行或未处理），手动转换
+        if ClipboardHasImage() && !ClipboardHasFiles() {
+            filepath := SaveClipboardImage()
+            if filepath {
+                SetClipboardToFile(filepath)
+                Sleep(100)
+            }
         }
     }
     ; 使用 SendInput 发送原始按键，$ 前缀确保不会再次触发此热键
@@ -59,8 +67,8 @@ SaveClipboardImage() {
 }
 
 SetClipboardToFile(filepath) {
-    ; 使用 PowerShell 设置剪贴板为文件引用
-    psCommand := 'Add-Type -AssemblyName System.Windows.Forms; $fc = New-Object System.Collections.Specialized.StringCollection; $fc.Add(\"' filepath '\"); [System.Windows.Forms.Clipboard]::SetFileDropList($fc)'
+    ; 使用 PowerShell 设置剪贴板为文件引用（带重试）
+    psCommand := 'Add-Type -AssemblyName System.Windows.Forms; for ($i=0; $i -lt 3; $i++) { try { $fc = New-Object System.Collections.Specialized.StringCollection; $fc.Add(\"' filepath '\"); [System.Windows.Forms.Clipboard]::SetFileDropList($fc); break } catch { Start-Sleep -Milliseconds 100 } }'
 
     RunWait('powershell -NoProfile -Command "' psCommand '"',, "Hide")
 }
