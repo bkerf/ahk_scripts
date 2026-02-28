@@ -128,7 +128,9 @@ if !FileExist(shortcutPath) {
 ; ========================================
 ; Shift+Enter 换行（用于 Claude Code）
 ; ========================================
-; 在终端中 Shift+Enter 发送反斜杠+回车实现换行
+; 仅在终端/PowerShell 窗口中生效：Shift+Enter 发送反斜杠+回车实现换行
+#HotIf WinActive("ahk_exe WindowsTerminal.exe") || WinActive("ahk_exe powershell.exe") || WinActive("ahk_exe pwsh.exe") || WinActive("ahk_exe cmd.exe") || WinActive("ahk_class CASCADIA_HOSTING_WINDOW_CLASS")
 +Enter:: {
     SendInput("\{Enter}")
 }
+#HotIf
