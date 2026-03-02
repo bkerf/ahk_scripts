@@ -47,13 +47,13 @@ Home 键增强，按住暂停媒体播放，释放恢复播放，同时保留 Ho
    ```bash
    git clone git@github.com:bkerf/ahk_scripts.git
    ```
-3. 双击运行需要的 `.ahk` 脚本
+3. 双击运行 `StartAll.ahk` 启动所有脚本
 
 ## 开机启动
 
-所有脚本首次运行时会自动添加到 Windows 启动项。
+运行 `StartAll.ahk` 后会自动添加到 Windows 启动项。
 
-可通过托盘图标右键菜单移除开机启动。
+开机时 `StartAll.ahk` 会自动扫描并启动目录下所有 `.ahk` 脚本。新增脚本只需放入目录即可。
 
 ## License
 
