@@ -30,7 +30,6 @@ A_TrayMenu.Add("Home Media Control", (*) => "")
 A_TrayMenu.Disable("Home Media Control")
 A_TrayMenu.Add()
 A_TrayMenu.Add("Pause Script", TrayPauseScript)
-A_TrayMenu.Add("Remove from Startup", TrayRemoveAutoStart)
 A_TrayMenu.Add()
 A_TrayMenu.Add("Exit", (*) => ExitApp())
 
@@ -42,21 +41,9 @@ TrayPauseScript(*) {
         A_TrayMenu.Uncheck("Pause Script")
 }
 
-TrayRemoveAutoStart(*) {
-    shortcutPath := A_Startup "\Home_MediaControl.lnk"
-    if FileExist(shortcutPath) {
-        FileDelete(shortcutPath)
-        MsgBox("Removed from startup", "Terminal MediaControl", "Iconi T2")
-    }
-}
-
 TrayTip("Home Media Control", "HOME key = Media Play/Pause", 1)
 
-; ===== Auto-Startup Configuration =====
-shortcutPath := A_Startup "\Home_MediaControl.lnk"
-if !FileExist(shortcutPath) {
-    try FileCreateShortcut(A_ScriptFullPath, shortcutPath, A_ScriptDir)
-}
+; 自启动已由 StartAll.ahk 统一管理
 
 ; ===== HOME Key Hotkey =====
 Home:: {

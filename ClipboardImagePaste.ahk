@@ -119,11 +119,7 @@ A_TrayMenu.Add("退出", (*) => ExitApp())
 ; 托盘提示
 TrayTip("剪贴板图片转换", "已启动，Ctrl+V 自动转换截图", 1)
 
-; 自启动
-shortcutPath := A_Startup "\ClipboardImagePaste.lnk"
-if !FileExist(shortcutPath) {
-    try FileCreateShortcut(A_ScriptFullPath, shortcutPath, A_ScriptDir)
-}
+; 自启动已由 StartAll.ahk 统一管理
 
 ; ========================================
 ; Shift+Enter 换行（用于 Claude Code）

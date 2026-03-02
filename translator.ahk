@@ -18,11 +18,7 @@ A_TrayMenu.Add("退出", (*) => ExitApp())
 
 TrayTip("翻译工具", "已启动", 1)
 
-; 自启动
-shortcutPath := A_Startup "\translator.lnk"
-if !FileExist(shortcutPath) {
-    try FileCreateShortcut(A_ScriptFullPath, shortcutPath, A_ScriptDir)
-}
+; 自启动已由 StartAll.ahk 统一管理
 
 ; Ctrl + Shift + T: 翻译选中文本为英文
 ^+t::
