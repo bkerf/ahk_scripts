@@ -9,7 +9,7 @@
 scriptDir := A_ScriptDir
 
 ; ===== 启动 TCP 媒体监听服务 =====
-Run("F:/code/windows_listener/.venv/Scripts/pythonw.exe F:/code/windows_listener/media_listener.py --tcp", , "Hide")
+Run("F:/code/windows_listener/.venv/Scripts/pythonw.exe " A_ScriptDir "\media_listener.py --tcp", , "Hide")
 
 ; ===== 扫描并启动目录下所有 .ahk 脚本（排除自身） =====
 Loop Files scriptDir "\*.ahk" {
