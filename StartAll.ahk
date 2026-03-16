@@ -8,7 +8,10 @@
 ; 获取脚本目录
 scriptDir := A_ScriptDir
 
-; 扫描并启动目录下所有 .ahk 脚本（排除自身）
+; ===== 启动 TCP 媒体监听服务 =====
+Run("F:/code/windows_listener/.venv/Scripts/pythonw.exe F:/code/windows_listener/media_listener.py --tcp", , "Hide")
+
+; ===== 扫描并启动目录下所有 .ahk 脚本（排除自身） =====
 Loop Files scriptDir "\*.ahk" {
     if (A_LoopFileName != "StartAll.ahk") {
         Run(A_LoopFileFullPath)
