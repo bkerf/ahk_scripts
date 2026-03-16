@@ -1,0 +1,74 @@
+{
+  "version": "1.0.0",
+  "lastScanned": 1773626716625,
+  "projectRoot": "F:\\code\\ahk_scripts",
+  "techStack": {
+    "languages": [],
+    "frameworks": [],
+    "packageManager": null,
+    "runtime": null
+  },
+  "build": {
+    "buildCommand": null,
+    "testCommand": null,
+    "lintCommand": null,
+    "devCommand": null,
+    "scripts": {}
+  },
+  "conventions": {
+    "namingStyle": null,
+    "importStyle": null,
+    "testPattern": null,
+    "fileOrganization": null
+  },
+  "structure": {
+    "isMonorepo": false,
+    "workspaces": [],
+    "mainDirectories": [],
+    "gitBranches": {
+      "defaultBranch": "main",
+      "branchingStrategy": null
+    }
+  },
+  "customNotes": [],
+  "directoryMap": {},
+  "hotPaths": [
+    {
+      "path": "VoiceMediaControl.ahk",
+      "accessCount": 27,
+      "lastAccessed": 1773631967101,
+      "type": "file"
+    },
+    {
+      "path": "StartAll.ahk",
+      "accessCount": 12,
+      "lastAccessed": 1773638074009,
+      "type": "file"
+    },
+    {
+      "path": "",
+      "accessCount": 1,
+      "lastAccessed": 1773626992499,
+      "type": "directory"
+    },
+    {
+      "path": "C:\\Users\\七道易\\.claude\\plans\\glistening-purring-orbit.md",
+      "accessCount": 1,
+      "lastAccessed": 1773628305567,
+      "type": "file"
+    },
+    {
+      "path": "C:\\Users\\七道易\\AppData\\Local\\Temp\\claude\\F--code-ahk-scripts\\44e8b92b-94aa-4857-847f-36582eaf5d59\\tasks\\b5vxmivkx.output",
+      "accessCount": 1,
+      "lastAccessed": 1773629794526,
+      "type": "file"
+    },
+    {
+      "path": "C:\\Users\\七道易\\AppData\\Local\\Temp\\claude\\F--code-ahk-scripts\\44e8b92b-94aa-4857-847f-36582eaf5d59\\tasks\\b9ftnagmi.output",
+      "accessCount": 1,
+      "lastAccessed": 1773630004840,
+      "type": "file"
+    }
+  ],
+  "userDirectives": []
+}
