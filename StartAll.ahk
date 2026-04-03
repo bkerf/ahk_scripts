@@ -1,5 +1,5 @@
 ; StartAll.ahk
-; 自动启动目录下所有 AHK 脚本
+; 开机启动入口：启动统一热键脚本和后台媒体监听服务
 ; AHK v2
 
 #Requires AutoHotkey v2.0
@@ -11,12 +11,8 @@ scriptDir := A_ScriptDir
 ; ===== 启动 TCP 媒体监听服务 =====
 Run(A_ScriptDir "\.venv\Scripts\pythonw.exe " A_ScriptDir "\media_listener.py --tcp", , "Hide")
 
-; ===== 扫描并启动目录下所有 .ahk 脚本（排除自身） =====
-Loop Files scriptDir "\*.ahk" {
-    if (A_LoopFileName != "StartAll.ahk") {
-        Run(A_LoopFileFullPath)
-    }
-}
+; ===== 统一启动主脚本（单托盘图标） =====
+Run(scriptDir "\UnifiedHotkeys.ahk")
 
 ; 自启动：将自身添加到启动目录
 shortcutPath := A_Startup "\StartAll.lnk"

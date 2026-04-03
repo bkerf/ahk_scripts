@@ -9,30 +9,35 @@ Windows 自动化脚本集合，基于 AutoHotkey v2。所有脚本使用 `#Requ
 ## Architecture
 
 ```
-├── StartAll.ahk           # 统一启动入口（开机自启，扫描并启动所有脚本）
+├── StartAll.ahk            # 开机启动入口（启动 UnifiedHotkeys + media_listener）
+├── UnifiedHotkeys.ahk      # 统一热键入口（单托盘图标）
 ├── ClipboardImagePaste.ahk # 剪贴板图片转换（Ctrl+V）
 ├── Home_MediaControl.ahk   # 媒体控制（Home键）
+├── VoiceMediaControl.ahk   # Win+H 语音前暂停媒体
 ├── translator.ahk          # 翻译工具入口（调用 translator.py）
 ├── translator.py           # DeepL 翻译后端（跨平台）
 └── *.ps1                   # PowerShell 辅助脚本
 ```
 
 **启动机制：**
-- `StartAll.ahk` 是唯一的开机启动入口，自动扫描目录下所有 `.ahk` 脚本并启动
-- 新增脚本只需放入目录，下次开机自动加载
+- `StartAll.ahk` 是唯一的开机启动入口，只启动 `UnifiedHotkeys.ahk` 和 `media_listener.py`
+- `UnifiedHotkeys.ahk` 负责统一托管常用热键，只保留一个托盘图标
 - 各脚本**不再**独立添加自启动项
 
 **脚本模式：**
-- AHK 脚本作为热键入口，常驻托盘
+- `UnifiedHotkeys.ahk` 作为默认常驻热键入口
+- `translator.ahk` 保留为按需手动启动
 - 复杂逻辑通过 `Run()` 调用 Python/PowerShell 实现
 
 ## Scripts
 
 | 脚本 | 功能 | 热键 |
 |------|------|------|
+| `UnifiedHotkeys.ahk` | 默认统一热键入口 | `Ctrl+V` / `Shift+Enter` / `Home` / `Win+H` |
 | `ClipboardImagePaste.ahk` | 剪贴板图片自动转文件 | `Ctrl+V`（智能检测） |
 | `ClipboardImagePaste.ahk` | 终端换行 | `Shift+Enter`（仅终端） |
 | `Home_MediaControl.ahk` | 媒体播放/暂停 | `Home` |
+| `VoiceMediaControl.ahk` | 语音前暂停媒体 | `Win+H` |
 | `translator.ahk` | 翻译选中文本 | `Ctrl+Shift+T`（→英文） |
 
 ## AHK v2 Conventions
@@ -70,9 +75,9 @@ translator.py 需要：
 ## Running Scripts
 
 ```bash
-# 启动所有脚本（推荐）
+# 启动默认开机集合（推荐）
 start "" "F:/code/ahk_scripts/StartAll.ahk"
 
-# 启动单个脚本
-start "" "F:/code/ahk_scripts/ClipboardImagePaste.ahk"
+# 按需单独启动翻译工具
+start "" "F:/code/ahk_scripts/translator.ahk"
 ```
