@@ -3,6 +3,8 @@
 ## Project Structure & Module Organization
 This repository is a flat collection of Windows automation scripts built around AutoHotkey v2. Main entry points live in the repo root: `StartAll.ahk` launches `UnifiedHotkeys.ahk` and starts `media_listener.py`. Feature scripts such as `ClipboardImagePaste.ahk`, `Home_MediaControl.ahk`, `VoiceMediaControl.ahk`, and `translator.ahk` stay beside their helpers. Python backends (`translator.py`, `media_listener.py`, `check_media.py`) and PowerShell helpers (`CheckMediaPlaying.ps1`, `ClipboardMonitor.ps1`) also live at the root. Keep new files in the root unless a real submodule boundary appears.
 
+Startup ownership is intentionally split: `StartAll.ahk` is only the bootstrap script and must exit after launching `UnifiedHotkeys.ahk` plus background helpers. Any persistent AHK hotkey, tray menu item, or long-running automation belongs in `UnifiedHotkeys.ahk`; adding a hotkey directly to `StartAll.ahk` keeps it resident and creates a second tray icon.
+
 ## Build, Test, and Development Commands
 There is no build step. Use the local virtual environment when Python is involved.
 

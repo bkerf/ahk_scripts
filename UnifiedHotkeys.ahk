@@ -31,6 +31,12 @@ A_TrayMenu.Add("退出", (*) => ExitApp())
 
 TrayTip("AHK Scripts", "已启动：剪贴板、媒体控制", 1)
 
+; Win + Shift + C 清理 claude.ai/anthropic 浏览器记录
+#+c:: {
+    claudeCleaner := A_ScriptDir "\clear-claude-login.ps1"
+    Run('powershell -NoProfile -ExecutionPolicy Bypass -File "' claudeCleaner '" -CloseBrowsers -VerboseOutput', , "Hide")
+}
+
 ToggleHomeMediaControl(*) {
     global HomeMediaEnabled
 
