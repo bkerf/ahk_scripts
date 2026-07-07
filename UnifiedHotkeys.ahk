@@ -9,6 +9,12 @@ global ScreenshotDir := A_Temp "\Screenshots"
 global MaxScreenshots := 50
 global HomeLogFile := A_ScriptDir "\Home_debug.log"
 global HomeMediaEnabled := true
+global SmartPlayerAllowedTitleKeywords := [
+    "智能玩家系统",
+    "Smart Player",
+    "任务编辑器",
+    "智能节点配置中心"
+]
 
 if !DirExist(ScreenshotDir)
     DirCreate(ScreenshotDir)
@@ -30,6 +36,30 @@ A_TrayMenu.Add()
 A_TrayMenu.Add("退出", (*) => ExitApp())
 
 TrayTip("AHK Scripts", "已启动：剪贴板、媒体控制", 1)
+
+; 只允许 Smart Player 相关窗口接收 F1，避免 Chrome/VSCode 等应用打开帮助页。
+#HotIf !IsSmartPlayerWindowActive()
+$F1:: {
+    return
+}
+#HotIf
+
+IsSmartPlayerWindowActive() {
+    global SmartPlayerAllowedTitleKeywords
+
+    try {
+        title := WinGetTitle("A")
+    } catch {
+        return false
+    }
+
+    for keyword in SmartPlayerAllowedTitleKeywords {
+        if InStr(title, keyword)
+            return true
+    }
+
+    return false
+}
 
 ; Win + Shift + C 清理 claude.ai/anthropic 浏览器记录
 #+c:: {
@@ -57,6 +87,14 @@ Log(msg) {
 ; ========================================
 ; ClipboardImagePaste
 ; ========================================
+IsTerminalWindowActive() {
+    return WinActive("ahk_exe WindowsTerminal.exe")
+        || WinActive("ahk_exe powershell.exe")
+        || WinActive("ahk_exe pwsh.exe")
+        || WinActive("ahk_exe cmd.exe")
+        || WinActive("ahk_class CASCADIA_HOSTING_WINDOW_CLASS")
+}
+
 $^v:: {
     if ClipboardHasImage() && !ClipboardHasFiles() {
         waited := 0
@@ -139,7 +177,7 @@ SortByTime(arr) {
     return arr
 }
 
-#HotIf WinActive("ahk_exe WindowsTerminal.exe") || WinActive("ahk_exe powershell.exe") || WinActive("ahk_exe pwsh.exe") || WinActive("ahk_exe cmd.exe") || WinActive("ahk_class CASCADIA_HOSTING_WINDOW_CLASS")
+#HotIf IsTerminalWindowActive()
 +Enter:: {
     SendInput("\{Enter}")
 }

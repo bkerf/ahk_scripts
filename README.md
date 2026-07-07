@@ -27,6 +27,7 @@ Windows 自动化脚本集合，基于 AutoHotkey v2。
 
 - `Ctrl+V` - 自动检测剪贴板图片并转换
 - `Shift+Enter` - 终端换行（用于 Claude Code）
+- `F1` - 默认拦截帮助键，只允许 Smart Player 相关窗口接收
 - `Home` - 媒体播放/暂停
 - `Win+H` - 语音输入前暂停媒体，2 分钟后自动恢复
 
