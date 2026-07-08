@@ -73,7 +73,7 @@ ahk_scripts/
 | 模块 | 热键 | 函数 | 自持全局 / 自初始化 |
 |------|------|------|------|
 | `Common.ahk` | — | `Log()` | 日志路径（`Log()` 被 Media 与组合根共用）；启动时清空日志 |
-| `Clipboard.ahk` | `Ctrl+V`(`$^v`)、`Shift+Enter`(`+Enter`, 仅终端) | `ClipboardHasImage/HasFiles`、`SaveClipboardImage`、`SetClipboardToFile`、`IsTerminalWindowActive`、`CleanupOldScreenshots`、`SortByTime` | `ScreenshotDir`、`MaxScreenshots`；启动时建目录 + 清理旧截图 |
+| `Clipboard.ahk` | `Ctrl+V`(`$^v`)、`Ctrl+Shift+V`(`$^+v`, 仅终端)、`Shift+Enter`(`+Enter`, 仅终端) | `ClipboardHasImage/HasFiles`、`SaveClipboardImage`、`SetClipboardToFile`、`IsTerminalWindowActive`、`CleanupOldScreenshots`、`SortByTime`、SSH 截图上传辅助函数 | `ScreenshotDir`、`MaxScreenshots`、`SshScreenshotHost`、`SshScreenshotDir`；启动时建目录 + 清理旧截图 |
 | `Media.ahk` | `Home`、`Win+H`(`$#h`) | `WSAStartup`、`TCP_QUERY`、`ResumeMedia`、`ToggleHomeMediaControl` | `HomeMediaEnabled` |
 | `SmartPlayer.ahk` | `F1`(`$F1`, `#HotIf` 条件)、`Win+Shift+C`(`#+c`) | `IsSmartPlayerWindowActive` | `SmartPlayerAllowedTitleKeywords` |
 
@@ -125,11 +125,12 @@ ahk_scripts/
 - **`CLAUDE.md`（指针）**：保留 Claude Code 要求的开头声明 + 一句「本仓库规范与架构以 `./AGENTS.md` 为唯一入口，请先阅读」。使 Claude 与 Codex 共用一份事实源，避免重复漂移。
 - **`README.md`**：用户向，更新脚本路径与启动说明。
 
-## 热键总表（重构后不变，以 `UnifiedHotkeys.ahk` 为准）
+## 当前热键总表（以 `UnifiedHotkeys.ahk` 为准）
 
 | 热键 | 行为 | 生效条件 | 所属模块 |
 |------|------|----------|----------|
 | `Ctrl+V` | 剪贴板图片自动转文件后再粘贴 | 检测到图片且非文件时 | Clipboard |
+| `Ctrl+Shift+V` | 上传剪贴板截图/文件到 `node-99:/Users/ok/Desktop/tmp/`，并粘贴远程路径 | 仅终端窗口 | Clipboard |
 | `Shift+Enter` | 发送 `\` + 回车（Claude Code 换行） | 仅终端窗口 | Clipboard |
 | `Home` | 媒体播放/暂停 | 托盘勾选时；否则发原始 `Home` | Media |
 | `Win+H` | 播放中则暂停媒体、2 分钟后自动恢复，再透传 `Win+H` | — | Media |
@@ -149,6 +150,6 @@ ahk_scripts/
 ## 非目标（YAGNI）
 
 - 不引入构建系统、不加自动化测试框架（当前项目规模不需要）。
-- 不改任何热键的用户可见行为。
+- 重构本身不改既有热键的用户可见行为；后续新增热键需同步本文档、`AGENTS.md` 与 `README.md`。
 - 不重写 Python/PowerShell 后端逻辑，仅移动位置 + 更新引用路径。
 - 不做 `lib/` 之外的进一步分层（如按平台细分），留待真有需要时再说。

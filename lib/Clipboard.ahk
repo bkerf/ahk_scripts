@@ -1,11 +1,13 @@
 ; lib/Clipboard.ahk
-; Ctrl+V 剪贴板图片转文件，以及终端 Shift+Enter 换行。
+; Ctrl+V 剪贴板图片转文件，终端截图上传，以及终端 Shift+Enter 换行。
 
 InitializeClipboardModule() {
-    global ScreenshotDir, MaxScreenshots
+    global ScreenshotDir, MaxScreenshots, SshScreenshotHost, SshScreenshotDir
 
     ScreenshotDir := A_Temp "\Screenshots"
     MaxScreenshots := 50
+    SshScreenshotHost := "node-99"
+    SshScreenshotDir := "/Users/ok/Desktop/tmp"
 
     if !DirExist(ScreenshotDir)
         DirCreate(ScreenshotDir)
@@ -31,6 +33,52 @@ ClipboardHasFiles() {
     return DllCall("IsClipboardFormatAvailable", "uint", 15)
 }
 
+GetClipboardFilePath() {
+    outFile := A_Temp "\ahk_clipboard_file_" A_TickCount ".txt"
+    psCommand := "Add-Type -AssemblyName System.Windows.Forms; $files = [System.Windows.Forms.Clipboard]::GetFileDropList(); if ($files.Count -gt 0) { Set-Content -LiteralPath '" outFile "' -Value $files[0] -NoNewline -Encoding UTF8 }"
+    RunWait('powershell -NoProfile -Command "' psCommand '"',, "Hide")
+
+    filepath := ""
+    if FileExist(outFile) {
+        filepath := Trim(FileRead(outFile, "UTF-8"), " `t`r`n")
+        try FileDelete(outFile)
+    }
+
+    return filepath
+}
+
+GetClipboardTextFilePath() {
+    text := Trim(A_Clipboard, " `t`r`n")
+    if !text
+        return ""
+
+    firstLine := Trim(StrSplit(text, "`n")[1], " `t`r`n")
+    if StrLen(firstLine) >= 2
+        && SubStr(firstLine, 1, 1) = '"'
+        && SubStr(firstLine, StrLen(firstLine), 1) = '"'
+        firstLine := SubStr(firstLine, 2, StrLen(firstLine) - 2)
+
+    if FileExist(firstLine)
+        return firstLine
+    return ""
+}
+
+ResolveClipboardScreenshotFile() {
+    if ClipboardHasFiles() {
+        filepath := GetClipboardFilePath()
+        if filepath && FileExist(filepath)
+            return filepath
+    }
+
+    if ClipboardHasImage() {
+        filepath := SaveClipboardImage()
+        if filepath
+            return filepath
+    }
+
+    return GetClipboardTextFilePath()
+}
+
 SaveClipboardImage() {
     global ScreenshotDir
 
@@ -48,6 +96,47 @@ SaveClipboardImage() {
 SetClipboardToFile(filepath) {
     psCommand := 'Add-Type -AssemblyName System.Windows.Forms; for ($i=0; $i -lt 3; $i++) { try { $fc = New-Object System.Collections.Specialized.StringCollection; $fc.Add(\"' filepath '\"); [System.Windows.Forms.Clipboard]::SetFileDropList($fc); break } catch { Start-Sleep -Milliseconds 100 } }'
     RunWait('powershell -NoProfile -Command "' psCommand '"',, "Hide")
+}
+
+UploadFileToSshHost(localPath) {
+    global SshScreenshotHost, SshScreenshotDir
+
+    SplitPath(localPath, &filename)
+    if !filename
+        return ""
+
+    command := Format(
+        'cmd /c ssh -o BatchMode=yes -o ConnectTimeout=10 {1} "mkdir -p {2}" && scp -o BatchMode=yes -o ConnectTimeout=10 "{3}" "{1}:{2}/"',
+        SshScreenshotHost,
+        SshScreenshotDir,
+        localPath
+    )
+
+    if RunWait(command,, "Hide") != 0
+        return ""
+
+    return SshScreenshotDir "/" filename
+}
+
+PasteText(text) {
+    SendText(text)
+}
+
+UploadClipboardScreenshotToSsh(*) {
+    filepath := ResolveClipboardScreenshotFile()
+    if !filepath {
+        TrayTip("AHK Scripts", "剪贴板里没有可上传的截图文件", 2)
+        return
+    }
+
+    remotePath := UploadFileToSshHost(filepath)
+    if !remotePath {
+        TrayTip("AHK Scripts", "上传到 node-99 失败", 3)
+        return
+    }
+
+    PasteText(remotePath)
+    TrayTip("AHK Scripts", "已上传截图到 node-99", 1)
 }
 
 CleanupOldScreenshots() {
@@ -104,6 +193,8 @@ $^v:: {
 }
 
 #HotIf IsTerminalWindowActive()
+$^+v:: UploadClipboardScreenshotToSsh()
+
 +Enter:: {
     SendInput("\{Enter}")
 }
