@@ -3,11 +3,17 @@
 
 InitializeClipboardModule() {
     global ScreenshotDir, MaxScreenshots, SshScreenshotHost, SshScreenshotDir
+    global LastSshUploadLocalPath, LastSshUploadSignature, LastSshUploadRemotePath
+    global LastSshPasteTriggerTick
 
     ScreenshotDir := A_Temp "\Screenshots"
     MaxScreenshots := 50
     SshScreenshotHost := "node-99"
     SshScreenshotDir := "/Users/ok/Desktop/tmp"
+    LastSshUploadLocalPath := ""
+    LastSshUploadSignature := ""
+    LastSshUploadRemotePath := ""
+    LastSshPasteTriggerTick := 0
 
     if !DirExist(ScreenshotDir)
         DirCreate(ScreenshotDir)
@@ -72,11 +78,49 @@ ResolveClipboardScreenshotFile() {
 
     if ClipboardHasImage() {
         filepath := SaveClipboardImage()
-        if filepath
+        if filepath {
+            SetClipboardToFile(filepath)
+            Sleep(100)
             return filepath
+        }
     }
 
     return GetClipboardTextFilePath()
+}
+
+GetFileSignature(filepath) {
+    if !FileExist(filepath)
+        return ""
+
+    try {
+        return FileGetSize(filepath, "B") ":" FileGetTime(filepath, "M")
+    } catch {
+        return ""
+    }
+}
+
+GetCachedSshRemotePath(localPath) {
+    global LastSshUploadLocalPath, LastSshUploadSignature, LastSshUploadRemotePath
+
+    signature := GetFileSignature(localPath)
+    if signature
+        && localPath = LastSshUploadLocalPath
+        && signature = LastSshUploadSignature
+        && LastSshUploadRemotePath
+        return LastSshUploadRemotePath
+    return ""
+}
+
+RememberSshUpload(localPath, remotePath) {
+    global LastSshUploadLocalPath, LastSshUploadSignature, LastSshUploadRemotePath
+
+    signature := GetFileSignature(localPath)
+    if !signature
+        return
+
+    LastSshUploadLocalPath := localPath
+    LastSshUploadSignature := signature
+    LastSshUploadRemotePath := remotePath
 }
 
 SaveClipboardImage() {
@@ -122,6 +166,45 @@ PasteText(text) {
     SendText(text)
 }
 
+EscapeAppleScriptString(text) {
+    text := StrReplace(text, "\", "\\")
+    return StrReplace(text, '"', '\"')
+}
+
+SetRemoteMacClipboardToImage(remotePath) {
+    global SshScreenshotHost
+
+    scriptFile := A_Temp "\ahk_remote_image_clipboard_" A_TickCount ".scpt"
+    script := 'set imageFile to POSIX file "' EscapeAppleScriptString(remotePath) '"' "`n"
+    script .= 'set the clipboard to (read imageFile as «class PNGf»)' "`n"
+
+    try {
+        FileAppend(script, scriptFile, "UTF-8")
+        command := Format(
+            'cmd /c ssh -o BatchMode=yes -o ConnectTimeout=10 {1} osascript < "{2}"',
+            SshScreenshotHost,
+            scriptFile
+        )
+        return RunWait(command,, "Hide") = 0
+    } catch {
+        return false
+    } finally {
+        try FileDelete(scriptFile)
+    }
+}
+
+TriggerCodexImagePaste() {
+    global LastSshPasteTriggerTick
+
+    if A_TickCount - LastSshPasteTriggerTick < 1500
+        return
+
+    ; Codex TUI binds Ctrl+V to fixed.paste_image. Send the control byte,
+    ; not Windows Terminal's local paste command.
+    SendText(Chr(22))
+    LastSshPasteTriggerTick := A_TickCount
+}
+
 UploadClipboardScreenshotToSsh(*) {
     filepath := ResolveClipboardScreenshotFile()
     if !filepath {
@@ -129,14 +212,23 @@ UploadClipboardScreenshotToSsh(*) {
         return
     }
 
-    remotePath := UploadFileToSshHost(filepath)
+    remotePath := GetCachedSshRemotePath(filepath)
     if !remotePath {
-        TrayTip("AHK Scripts", "上传到 node-99 失败", 3)
+        remotePath := UploadFileToSshHost(filepath)
+        if !remotePath {
+            TrayTip("AHK Scripts", "上传到 node-99 失败", 3)
+            return
+        }
+
+        RememberSshUpload(filepath, remotePath)
+    }
+
+    if !SetRemoteMacClipboardToImage(remotePath) {
+        TrayTip("AHK Scripts", "设置 node-99 图片剪贴板失败", 3)
         return
     }
 
-    PasteText(remotePath)
-    TrayTip("AHK Scripts", "已上传截图到 node-99", 1)
+    TriggerCodexImagePaste()
 }
 
 CleanupOldScreenshots() {

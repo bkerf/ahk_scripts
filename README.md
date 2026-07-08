@@ -18,12 +18,23 @@ Windows 自动化脚本集合，基于 AutoHotkey v2。默认只启动一个常�
 | 热键 | 行为 |
 |------|------|
 | `Ctrl+V` | 检测剪贴板图片，必要时转成 PNG 文件引用后粘贴 |
-| `Ctrl+Shift+V` | 仅终端窗口：上传剪贴板截图/文件到 `node-99:/Users/ok/Desktop/tmp/`，并粘贴远程路径 |
+| `Ctrl+Shift+V` | 仅终端窗口：上传剪贴板截图/文件到 `node-99:/Users/ok/Desktop/tmp/`，设置 node-99 macOS 图片剪贴板，并触发 Codex 图片粘贴；同一剪贴板文件重复按只复用上次上传结果 |
 | `Shift+Enter` | 仅终端窗口中发送 `\` + 回车 |
 | `Home` | 媒体播放/暂停，可在托盘菜单关闭后恢复普通 Home |
 | `Win+H` | 若正在播放则暂停媒体，2 分钟后恢复，再打开语音输入 |
 | `F1` | 非 Smart Player 窗口中拦截帮助键 |
 | `Win+Shift+C` | 清理 claude.ai/anthropic 浏览器痕迹 |
+
+### 终端截图粘贴
+
+`Ctrl+Shift+V` 用于 Windows Terminal SSH 到 `node-99` 后，在远端 Codex TUI 里粘贴截图图片。它不是粘贴路径文本：
+
+1. 读取当前 Windows 剪贴板截图或截图文件。
+2. 上传到 `node-99:/Users/ok/Desktop/tmp/`。
+3. 通过 `osascript` 把 node-99 的 macOS 剪贴板设置为该 PNG。
+4. 向终端发送原始 `Ctrl+V` 控制字符，让 Codex TUI 走图片粘贴入口。
+
+不要改成粘贴 `@文件名`、绝对路径或 `Use view_image...` 文本。`@` 只会触发 Codex 文件 mention 搜索，可能显示 `no matches`，不会稳定变成图片附件。
 
 翻译工具不随开机启动。需要时运行 `tools/translator.ahk`：
 
@@ -50,6 +61,7 @@ start "" ".\StartAll.ahk"
 ```powershell
 .venv\Scripts\python.exe services\media_listener.py --check
 .venv\Scripts\python.exe services\media_listener.py --tcp
+ssh node-99 "osascript -e 'clipboard info'"
 .venv\Scripts\python.exe tools\translator.py --help
 start "" ".\tools\translator.ahk"
 ```

@@ -130,7 +130,7 @@ ahk_scripts/
 | 热键 | 行为 | 生效条件 | 所属模块 |
 |------|------|----------|----------|
 | `Ctrl+V` | 剪贴板图片自动转文件后再粘贴 | 检测到图片且非文件时 | Clipboard |
-| `Ctrl+Shift+V` | 上传剪贴板截图/文件到 `node-99:/Users/ok/Desktop/tmp/`，并粘贴远程路径 | 仅终端窗口 | Clipboard |
+| `Ctrl+Shift+V` | 上传剪贴板截图/文件到 `node-99:/Users/ok/Desktop/tmp/`，设置 node-99 macOS 图片剪贴板，并触发 Codex 图片粘贴；同一剪贴板文件重复按只复用上次上传结果 | 仅终端窗口 | Clipboard |
 | `Shift+Enter` | 发送 `\` + 回车（Claude Code 换行） | 仅终端窗口 | Clipboard |
 | `Home` | 媒体播放/暂停 | 托盘勾选时；否则发原始 `Home` | Media |
 | `Win+H` | 播放中则暂停媒体、2 分钟后自动恢复，再透传 `Win+H` | — | Media |
@@ -138,12 +138,35 @@ ahk_scripts/
 | `Win+Shift+C` | 运行 `clear-claude-login.ps1` 清 claude 痕迹 | — | SmartPlayer |
 | `Ctrl+Shift+T` / `Ctrl+Alt+Shift+T` / `Ctrl+Shift+Y` | DeepL 翻译（英/中/仅到剪贴板） | 仅 `tools/translator.ahk`，按需启动 | tools |
 
+### `Ctrl+Shift+V` 终端截图粘贴机制
+
+目标场景：Windows Terminal 里 SSH 到 `node-99`，当前前台是远端 Codex TUI，用户希望像本机 iTerm2 一样把截图作为图片输入粘贴给 Codex。
+
+最终可用链路：
+
+1. `ResolveClipboardScreenshotFile()` 优先取 Windows 剪贴板文件；如果只有剪贴板图片，则保存为 `%TEMP%\Screenshots\screenshot_*.png`，并把 Windows 剪贴板改成文件引用。
+2. `UploadFileToSshHost()` 上传到 `node-99:/Users/ok/Desktop/tmp/`。同一剪贴板文件用本地路径 + 文件大小 + 修改时间缓存远端路径，重复按热键不重复上传。
+3. `SetRemoteMacClipboardToImage()` 通过 `ssh node-99 osascript < 临时.scpt` 执行 AppleScript：`set the clipboard to (read imageFile as «class PNGf»)`，把 node-99 的 macOS 剪贴板设置为 PNG 图片。
+4. `TriggerCodexImagePaste()` 发送 `Chr(22)`，也就是原始 `Ctrl+V` 控制字符。这里不能用 `SendInput("^v")`，否则 Windows Terminal 可能执行本地粘贴，而不是把控制字符交给远端 Codex TUI。Codex TUI 的 `fixed.paste_image` 会读取远端 macOS 剪贴板图片并生成图片附件。
+
+已验证失败的替代方案：
+
+- 粘贴 `/Users/ok/Desktop/tmp/screenshot.png`：只是普通文本，Codex 不会自动作为图片附件。
+- 粘贴 `@screenshot.png` 或 `@/Users/ok/...`：触发 Codex 文件 mention 搜索；经常显示 `no matches`，不等价于图片输入。
+- 粘贴 `Use view_image to inspect...`：能让 agent 读文件，但这不是用户想要的图片粘贴体验，也不是 TUI 图片附件。
+
+排查要点：
+
+- `ssh node-99 "osascript -e 'clipboard info'"` 应出现 `«class PNGf»` 等图片类型。
+- 如果前台仍出现路径文本或 `view_image` 文本，说明 `UnifiedHotkeys.ahk` 不是最新版本，重新运行 `StartAll.ahk`。
+- 如果没有图片附件，优先确认 Codex TUI 能收到原始 `Ctrl+V`；Codex CLI keypress inspector 会显示终端实际发送的按键。
+
 ## 迁移与验证
 
 除归档外**行为保持不变**。无自动化测试，落地后手动冒烟：
 
 1. `start "" ".\StartAll.ahk"` → 只出现一个托盘图标；
-2. 逐个验热键：`Ctrl+V`、`Shift+Enter`、`Home`（含托盘开关）、`Win+H`（暂停+2 分钟恢复）、`F1`（仅 Smart Player 窗口放行）、`Win+Shift+C`；
+2. 逐个验热键：`Ctrl+V`、`Ctrl+Shift+V`（远端 Codex TUI 图片附件）、`Shift+Enter`、`Home`（含托盘开关）、`Win+H`（暂停+2 分钟恢复）、`F1`（仅 Smart Player 窗口放行）、`Win+Shift+C`；
 3. `.venv\Scripts\python.exe services\media_listener.py --check` → 打印 `playing`/`silent`；
 4. `start "" ".\tools\translator.ahk"` → 验翻译剪贴板读写与 `DEEPL_API_KEY`。
 

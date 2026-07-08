@@ -20,12 +20,14 @@
 | 热键 | 行为 | 所属模块 |
 |------|------|----------|
 | `Ctrl+V` | 剪贴板图片自动转 PNG 文件引用后粘贴 | `lib/Clipboard.ahk` |
-| `Ctrl+Shift+V` | 仅终端窗口：将剪贴板截图/文件上传到 `node-99:/Users/ok/Desktop/tmp/`，并粘贴远程路径 | `lib/Clipboard.ahk` |
+| `Ctrl+Shift+V` | 仅终端窗口：将剪贴板截图/文件上传到 `node-99:/Users/ok/Desktop/tmp/`，设置 node-99 macOS 图片剪贴板，并触发 Codex 图片粘贴；同一剪贴板文件重复按只复用上次上传结果 | `lib/Clipboard.ahk` |
 | `Shift+Enter` | 终端窗口中发送 `\` + 回车 | `lib/Clipboard.ahk` |
 | `Home` | 媒体播放/暂停，受托盘菜单开关控制 | `lib/Media.ahk` |
 | `Win+H` | 播放中先暂停媒体，2 分钟后恢复，再透传语音输入 | `lib/Media.ahk` |
 | `F1` | 非 Smart Player 窗口中拦截帮助键 | `lib/SmartPlayer.ahk` |
 | `Win+Shift+C` | 调用 `tools/clear-claude-login.ps1 -CloseBrowsers` | `lib/SmartPlayer.ahk` |
+
+`Ctrl+Shift+V` 的目标是让远端 Codex TUI 收到真实图片粘贴，不是文本路径。实现必须保持为：上传 PNG 到 `node-99:/Users/ok/Desktop/tmp/` → 用 `osascript` 设置 node-99 macOS 图片剪贴板 → 发送原始 `Ctrl+V` 控制字符。不要退回到 `@文件名`、绝对路径或 `Use view_image...` 文本；这些只会触发文件搜索或普通文本，不是 Codex 图片附件。
 
 翻译工具不随开机启动。需要时手动运行 `tools/translator.ahk`，其热键为 `Ctrl+Shift+T`、`Ctrl+Alt+Shift+T`、`Ctrl+Shift+Y`。
 
@@ -57,7 +59,7 @@ start "" ".\tools\translator.ahk"
 
 - 启动改动：运行 `start "" ".\StartAll.ahk"`，确认只有一个托盘图标，且媒体 TCP 服务能响应。
 - 媒体改动：运行 `.venv\Scripts\python.exe services\media_listener.py --check`，再手动验证 `Home` 和 `Win+H`。
-- 剪贴板改动：手动验证截图后 `Ctrl+V` 能粘贴文件引用；终端 `Ctrl+Shift+V` 能上传到 `node-99:/Users/ok/Desktop/tmp/` 并粘贴远程路径；终端 `Shift+Enter` 行为不变。
+- 剪贴板改动：手动验证截图后 `Ctrl+V` 能粘贴文件引用；终端 `Ctrl+Shift+V` 能上传到 `node-99:/Users/ok/Desktop/tmp/`、`ssh node-99 "osascript -e 'clipboard info'"` 可看到 PNG 类型，并在远端 Codex TUI 中触发图片附件，重复按同一剪贴板文件不重复上传；终端 `Shift+Enter` 行为不变。
 - 翻译改动：运行 `.venv\Scripts\python.exe tools\translator.py --help`，再手动启动 `tools/translator.ahk` 验证剪贴板和 `DEEPL_API_KEY`。
 - 遗留脚本只在明确维护 legacy 行为时验证，不应进入默认启动链路。
 
