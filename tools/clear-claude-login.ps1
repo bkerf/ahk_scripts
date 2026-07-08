@@ -13,9 +13,9 @@ $ProgressPreference = 'SilentlyContinue'
 function Resolve-Sqlite {
   $candidates = @(
     (Get-Command sqlite3 -ErrorAction SilentlyContinue).Source,
-    Join-Path $env:LOCALAPPDATA 'Android\Sdk\platform-tools\sqlite3.exe',
-    Join-Path $env:PROGRAMFILES 'SQLite\sqlite3.exe',
-    Join-Path ${env:PROGRAMFILES(x86)} 'SQLite\sqlite3.exe'
+    (Join-Path $env:LOCALAPPDATA 'Android\Sdk\platform-tools\sqlite3.exe'),
+    (Join-Path $env:PROGRAMFILES 'SQLite\sqlite3.exe'),
+    (Join-Path ${env:PROGRAMFILES(x86)} 'SQLite\sqlite3.exe')
   )
 
   foreach ($path in $candidates | Where-Object { $_ }) {
@@ -212,7 +212,7 @@ $browserMap = @{
 
 $sqliteExe = Resolve-Sqlite
 if ($CloseBrowsers) {
-  $processes = foreach ($name in $Browsers) { $browserMap[$name].Processes } | Select-Object -Unique
+  $processes = @(foreach ($name in $Browsers) { $browserMap[$name].Processes }) | Select-Object -Unique
   Stop-BrowserProcesses -ProcNames $processes
 }
 

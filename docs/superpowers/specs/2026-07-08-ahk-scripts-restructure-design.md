@@ -1,7 +1,7 @@
 # ahk_scripts 结构重构设计
 
 - 日期：2026-07-08
-- 状态：已确认（待写实施计划）
+- 状态：已实施（见 `docs/superpowers/plans/2026-07-08-ahk-scripts-restructure-implementation.md`）
 - 目标：把这个长期维护的 AutoHotkey v2 自动化脚本项目理顺结构，消除代码重复，便于以后逐步增加功能。
 
 ## 背景与问题
@@ -31,7 +31,7 @@ ahk_scripts/
 ├─ StartAll.ahk            # 引导：启动 services/media_listener + UnifiedHotkeys，自注册开机启动，退出
 ├─ UnifiedHotkeys.ahk      # 组合根：全局初始化 + 托盘菜单 + 一串 #Include lib/*
 ├─ lib/                    # 可复用功能模块（每个自带热键绑定 + 相关函数）
-│  ├─ Common.ahk           #   共享全局 + Log() + 截图清理（必须最先被 include）
+│  ├─ Common.ahk           #   统一初始化 + 托盘菜单 + Log()（必须最先被 include）
 │  ├─ Clipboard.ahk        #   $^v 图片转文件 + +Enter 终端换行
 │  ├─ Media.ahk            #   Home 播放/暂停 + $#h 语音前暂停 + TCP_QUERY + 托盘开关
 │  └─ SmartPlayer.ahk      #   $F1 拦截 + #+c 清 claude 痕迹
@@ -53,7 +53,9 @@ ahk_scripts/
 │  ├─ clear-claude-login.bat
 │  └─ README.txt
 ├─ docs/
-│  └─ superpowers/specs/2026-07-08-ahk-scripts-restructure-design.md
+│  └─ superpowers/
+│     ├─ specs/2026-07-08-ahk-scripts-restructure-design.md
+│     └─ plans/2026-07-08-ahk-scripts-restructure-implementation.md
 ├─ AGENTS.md               # 唯一的 AI/协作 + 架构指南（canonical）
 ├─ CLAUDE.md               # 仅指向 AGENTS.md
 ├─ README.md               # 用户向说明（更新路径）
@@ -75,7 +77,7 @@ ahk_scripts/
 | `Media.ahk` | `Home`、`Win+H`(`$#h`) | `WSAStartup`、`TCP_QUERY`、`ResumeMedia`、`ToggleHomeMediaControl` | `HomeMediaEnabled` |
 | `SmartPlayer.ahk` | `F1`(`$F1`, `#HotIf` 条件)、`Win+Shift+C`(`#+c`) | `IsSmartPlayerWindowActive` | `SmartPlayerAllowedTitleKeywords` |
 
-`UnifiedHotkeys.ahk` 组合根只保留：按顺序 `#Include`（Common 最先）+ 托盘菜单构建（`打开截图目录`、`Home Media Control` 开关等，引用各模块函数）+ `TrayTip`。截图目录创建、日志清空等由各自模块在顶层自初始化。
+`UnifiedHotkeys.ahk` 组合根只保留：按顺序 `#Include`（Common 最先）+ 调用 `InitializeUnifiedHotkeys()`。托盘菜单构建（`打开截图目录`、`Home Media Control` 开关等）在 `Common.ahk` 中集中处理；截图目录创建与清理由 `Clipboard.ahk` 的初始化函数负责，日志清空由 `Common.ahk` 负责。
 
 ### AHK `#Include` 机制约定（避免路径与作用域坑）
 
@@ -94,11 +96,12 @@ ahk_scripts/
 
 ## 启动流程调整
 
-`StartAll.ahk` 仅更新被移动文件的路径，逻辑不变：
+`StartAll.ahk` 更新被移动文件的路径，并在启动前精确清理本仓库旧的媒体监听进程树：
 
 - `media_listener.py` → `services\media_listener.py`；
 - `.venv\Scripts\pythonw.exe` 保持根目录不变；
-- 其余（写 `A_Startup\StartAll.lnk` 自启、拉起 `UnifiedHotkeys.ahk`、随后 `ExitApp()`）不变。
+- 清理命令行匹配本仓库 `media_listener.py --tcp` / `services\media_listener.py --tcp` 的 `python.exe` / `pythonw.exe`；
+- 其余（写 `A_Startup\StartAll.lnk` 自启、拉起 `UnifiedHotkeys.ahk`、随后 `ExitApp()`）保持不变。
 
 启动后仍是**单托盘图标**。
 
